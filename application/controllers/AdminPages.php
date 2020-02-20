@@ -23,6 +23,9 @@ class AdminPages extends CI_Controller {
             if($this->uri->segment(2)){
                 $current_url .= '/'.$this->uri->segment(2);
             }
+            if(!$current_url){
+                $current_url ='admin';
+            }
             $data['current_url'] = $current_url;
             $data['fixed'] = 'fixed';
             if($row){

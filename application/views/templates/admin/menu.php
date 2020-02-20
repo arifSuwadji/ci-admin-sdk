@@ -26,7 +26,7 @@
           </a>
         </li>
         <?php 
-        $icon_menu = $menuHalaman ? $menuHalaman->icon_menu : '';
+        $icon_menu = $menuHalaman ? $menuHalaman->icon_menu : 'zmdi zmdi-view-dashboard';
         $lastJudul = '';
         foreach($menuPriviliges->result() as $priv){ ?>
           <?php if($lastJudul != $priv->judul_menu){ ?>

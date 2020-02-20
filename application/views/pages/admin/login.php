@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <link rel="icon" href="/img/favicon.ico">
-  <title>Admin Echic | Community Healt Information Centre</title>
+  <title>Admin | SPBU</title>
   <!-- Tell the browser to be responsive to screen width -->
   <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
   <!-- Bootstrap 3.3.7 -->
@@ -47,7 +47,7 @@
   <?php } ?>
   <!-- /.login-logo -->
   <div class="login-logo" style="margin-top:0px;">
-    <a href="javascript:void(0);"><b>Manajemen Aset</b></a>
+    <a href="javascript:void(0);"><b>Payment Gateway</b></a>
   </div>
   
   <div class="login-box-body">
