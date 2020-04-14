@@ -5,7 +5,7 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <?php $title= array("Dashboard"); if($menuHalaman){$title = explode('(',$menuHalaman->sub_judul_menu); }?>
   <link rel="icon" href="<?php echo base_url('public/admin/images/Logo_PKM_Panah_Cinta_2019.jpg') ?>">
-  <title>Payment Gateway | <?php echo $title[0] ?></title>
+  <title>Distribusi APD | <?php echo $title[0] ?></title>
   <!-- Tell the browser to be responsive to screen width -->
   <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
   <!-- Bootstrap 3.3.7 -->
@@ -58,9 +58,9 @@
     <!-- Logo -->
     <a href="javascript:void(0);" class="logo">
       <!-- mini logo for sidebar mini 50x50 pixels -->
-      <span class="logo-mini"><b>P</b>G</span>
+      <span class="logo-mini"><b>D</b>A</span>
       <!-- logo for regular state and mobile devices -->
-      <span class="logo-lg"><b>Payment</b>Gateway</span>
+      <span class="logo-lg"><b>Distribusi</b>APD</span>
     </a>
     <!-- Header Navbar: style can be found in header.less -->
     <nav class="navbar navbar-static-top">

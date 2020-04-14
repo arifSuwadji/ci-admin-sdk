@@ -5,6 +5,8 @@ class Menu extends CI_Controller{
     public function __construct(){
         parent::__construct();
 
+        is_login();
+
         $this->load->model('admin/ModelPengguna');
         $this->load->model('admin/ModelHalamanMenu');
     }
@@ -14,8 +16,8 @@ class Menu extends CI_Controller{
             show_404();
         }
 
-        if(isset($this->session->userdata['adminManajemen'])){
-            $dataAdmin = $this->ModelPengguna->idAdmin($this->session->userdata['adminManajemen']['pengguna_id']);
+        $dataAdmin = data_admin($this->ModelPengguna);
+        if($dataAdmin){
             $row = $dataAdmin->row_array();
             $data = array();
             $current_url = $this->uri->segment(1);
@@ -39,32 +41,9 @@ class Menu extends CI_Controller{
                 $data['menuHalaman'] = $this->ModelHalamanMenu->byUrl($current_url)->row();
                 $data['menuPriviliges'] = $this->ModelHalamanMenu->byPeta($row['pengguna_grup'], 'ya');
                 $dataButtonHalaman = $this->ModelHalamanMenu->byPeta($row['pengguna_grup'],'tidak');
-                $arrayData = array();
-                $object = (object) array();
-                $objectOut = (object) array();
-                foreach($dataButtonHalaman->result() as $hal){
-                    array_push($arrayData, [$hal->halaman_menu => $hal->pengguna_grup]);
-                }
-                foreach($arrayData as $key => $value){
-                    foreach($value  as $key2 => $value2){
-                        $object->$key2 = $value2;
-                    }
-                }
-                foreach($object as $key => $value){
-                    $objectOut->$key = $value;
-                }
-                $data['buttonPriviliges'] = $objectOut;
+                $data['buttonPriviliges'] = button_halaman($dataButtonHalaman);
             }
-            $this->load->view('templates/admin/header', $data);
-            $this->load->view('templates/admin/menu', $data);
-            $this->load->view('pages/admin/'.$page, $data);
-            $this->load->view('templates/admin/footer', $data);
-        }else{
-            $data = array();
-            $data['nama_pengguna'] = $_GET ? $_GET['nama_pengguna'] : '';
-            $data['password'] = $_GET ? $_GET['password'] : '';
-            $data['errmsg'] = $_GET ? $_GET['errmsg'] : '';
-            $this->load->view('pages/admin/login', $data);
+            template_admin($page, $data);
         }
     }
 
@@ -78,7 +57,7 @@ class Menu extends CI_Controller{
         $recodsTotal = $this->ModelHalamanMenu->countMenu($value);
         $listMenu = $this->ModelHalamanMenu->listMenu($value, $start, $length, $column, $sort);
         $results = array();
-        $dataAdmin = $this->ModelPengguna->idAdmin($this->session->userdata['adminManajemen']['pengguna_id']);
+        $dataAdmin = data_admin($this->ModelPengguna);
         $row = $dataAdmin->row_array();
         $idHalamanEdit = 4;
         $idHalamanHapus = 6;
@@ -118,8 +97,8 @@ class Menu extends CI_Controller{
             show_404();
         }
 
-        if(isset($this->session->userdata['adminManajemen'])){
-            $dataAdmin = $this->ModelPengguna->idAdmin($this->session->userdata['adminManajemen']['pengguna_id']);
+        $dataAdmin = data_admin($this->ModelPengguna);
+        if($dataAdmin){
             $row = $dataAdmin->row_array();
             $data = array();
             $data['filejs'] = '';
@@ -143,41 +122,16 @@ class Menu extends CI_Controller{
                 $data['iconMenu'] = '';
                 $data['aktifMenu'] = '';
                 $dataButtonHalaman = $this->ModelHalamanMenu->byPeta($row['pengguna_grup'],'tidak');
-                $arrayData = array();
-                $object = (object) array();
-                $objectOut = (object) array();
-                foreach($dataButtonHalaman->result() as $hal){
-                    array_push($arrayData, [$hal->halaman_menu => $hal->pengguna_grup]);
-                }
-                foreach($arrayData as $key => $value){
-                    foreach($value  as $key2 => $value2){
-                        $object->$key2 = $value2;
-                    }
-                }
-                foreach($object as $key => $value){
-                    $objectOut->$key = $value;
-                }
-                $data['buttonPriviliges'] = $objectOut;
+                $data['buttonPriviliges'] = button_halaman($dataButtonHalaman);
             }
-            $this->load->view('templates/admin/header', $data);
-            $this->load->view('templates/admin/menu', $data);
-            $this->load->view('pages/admin/'.$page, $data);
-            $this->load->view('templates/admin/footer', $data);
-        }else{
-            $data = array();
-            $data['nama_pengguna'] = $_GET ? $_GET['nama_pengguna'] : '';
-            $data['password'] = $_GET ? $_GET['password'] : '';
-            $data['errmsg'] = $_GET ? $_GET['errmsg'] : '';
-            $this->load->view('pages/admin/login', $data);
+            template_admin($page, $data);
         }
     }
 
     public function tambahBaru($page = 'halaman_menu/tambah'){
-        $this->form_validation->set_rules('sub_judul_menu', 'Sub Judul Menu', 'required', array('required' => '%s belum diisi'));
-        $this->form_validation->set_rules('judul_menu', 'Judul Menu', 'required', array('required' => '%s belum diisi'));
-        $this->form_validation->set_rules('url_menu', 'Url Menu', 'required', array('required' => '%s belum dipilih'));
-        $this->form_validation->set_rules('icon_menu', 'Icon Menu', 'required', array('required' => '%s belum diisi'));
-        $this->form_validation->set_rules('aktif_menu', 'Aktif Menu', 'required', array('required' => '%s belum dipilih'));
+        $dataValidation = array('sub_judul_menu' => 'belum diisi', 'judul_menu' => 'belum diisi', 'url_menu' => 'belum dipilih', 'icon_menu' => 'belum diisi', 'aktif_menu' => 'belum dipilih');
+        is_validation($dataValidation);
+
         $data = array();
         $data['judulMenu'] = $this->input->post('judul_menu');
         $data['subJudulMenu'] = $this->input->post('sub_judul_menu');
@@ -192,7 +146,7 @@ class Menu extends CI_Controller{
         }
         $data['current_url'] = $current_url;
         $data['fixed'] = '';
-        $dataAdmin = $this->ModelPengguna->idAdmin($this->session->userdata['adminManajemen']['pengguna_id']);
+        $dataAdmin = data_admin($this->ModelPengguna);
         $row = $dataAdmin->row_array();
         if($row){
             $dataGrup = $this->ModelPengguna->idGrup($row['pengguna_grup'])->row_array();
@@ -202,28 +156,11 @@ class Menu extends CI_Controller{
             $data['menuHalaman'] = $this->ModelHalamanMenu->byUrl($current_url)->row();
             $data['menuPriviliges'] = $this->ModelHalamanMenu->byPeta($row['pengguna_grup'], 'ya');
             $dataButtonHalaman = $this->ModelHalamanMenu->byPeta($row['pengguna_grup'],'tidak');
-            $arrayData = array();
-            $object = (object) array();
-            $objectOut = (object) array();
-            foreach($dataButtonHalaman->result() as $hal){
-                array_push($arrayData, [$hal->halaman_menu => $hal->pengguna_grup]);
-            }
-            foreach($arrayData as $key => $value){
-                foreach($value  as $key2 => $value2){
-                    $object->$key2 = $value2;
-                }
-            }
-            foreach($object as $key => $value){
-                $objectOut->$key = $value;
-            }
-            $data['buttonPriviliges'] = $objectOut;
+            $data['buttonPriviliges'] = button_halaman($dataButtonHalaman);
         }
         
         if($this->form_validation->run() == FALSE){
-            $this->load->view('templates/admin/header', $data);
-            $this->load->view('templates/admin/menu', $data);
-            $this->load->view('pages/admin/'.$page, $data);
-            $this->load->view('templates/admin/footer', $data);
+            template_admin($page, $data);
         }else{
             $insert = array();
             $insert['judul_menu'] = $this->input->post('judul_menu');
@@ -247,8 +184,8 @@ class Menu extends CI_Controller{
             show_404();
         }
 
-        if(isset($this->session->userdata['adminManajemen'])){
-            $dataAdmin = $this->ModelPengguna->idAdmin($this->session->userdata['adminManajemen']['pengguna_id']);
+        $dataAdmin = data_admin($this->ModelPengguna);
+        if($dataAdmin){
             $row = $dataAdmin->row_array();
             $data = array();
             $data['filejs'] = '';
@@ -274,41 +211,16 @@ class Menu extends CI_Controller{
                 $data['iconMenu'] = $dataMenu->icon_menu;
                 $data['aktifMenu'] = $dataMenu->aktif_menu;
                 $dataButtonHalaman = $this->ModelHalamanMenu->byPeta($row['pengguna_grup'],'tidak');
-                $arrayData = array();
-                $object = (object) array();
-                $objectOut = (object) array();
-                foreach($dataButtonHalaman->result() as $hal){
-                    array_push($arrayData, [$hal->halaman_menu => $hal->pengguna_grup]);
-                }
-                foreach($arrayData as $key => $value){
-                    foreach($value  as $key2 => $value2){
-                        $object->$key2 = $value2;
-                    }
-                }
-                foreach($object as $key => $value){
-                    $objectOut->$key = $value;
-                }
-                $data['buttonPriviliges'] = $objectOut;
+                $data['buttonPriviliges'] = button_halaman($dataButtonHalaman);
             }
-            $this->load->view('templates/admin/header', $data);
-            $this->load->view('templates/admin/menu', $data);
-            $this->load->view('pages/admin/'.$page, $data);
-            $this->load->view('templates/admin/footer', $data);
-        }else{
-            $data = array();
-            $data['nama_pengguna'] = $_GET ? $_GET['nama_pengguna'] : '';
-            $data['password'] = $_GET ? $_GET['password'] : '';
-            $data['errmsg'] = $_GET ? $_GET['errmsg'] : '';
-            $this->load->view('pages/admin/login', $data);
+            template_admin($page, $data);
         }
     }
 
     public function update($page = 'halaman_menu/edit'){
-        $this->form_validation->set_rules('sub_judul_menu', 'Sub Judul Menu', 'required', array('required' => '%s belum diisi'));
-        $this->form_validation->set_rules('judul_menu', 'Judul Menu', 'required', array('required' => '%s belum diisi'));
-        $this->form_validation->set_rules('url_menu', 'Url Menu', 'required', array('required' => '%s belum dipilih'));
-        $this->form_validation->set_rules('icon_menu', 'Icon Menu', 'required', array('required' => '%s belum diisi'));
-        $this->form_validation->set_rules('aktif_menu', 'Aktif Menu', 'required', array('required' => '%s belum dipilih'));
+        $dataValidation = array('sub_judul_menu' => 'belum diisi', 'judul_menu' => 'belum diisi', 'url_menu' => 'belum dipilih', 'icon_menu' => 'belum diisi', 'aktif_menu' => 'belum dipilih');
+        is_validation($dataValidation);
+
         $data = array();
         $data['judulMenu'] = $this->input->post('judul_menu');
         $data['subJudulMenu'] = $this->input->post('sub_judul_menu');
@@ -324,7 +236,7 @@ class Menu extends CI_Controller{
         $data['current_url'] = $current_url;
         $data['fixed'] = '';
         $data['menu_id_edit'] = $this->input->post('menu_id_edit');
-        $dataAdmin = $this->ModelPengguna->idAdmin($this->session->userdata['adminManajemen']['pengguna_id']);
+        $dataAdmin = data_admin($this->ModelPengguna);
         $row = $dataAdmin->row_array();
         if($row){
             $dataGrup = $this->ModelPengguna->idGrup($row['pengguna_grup'])->row_array();
@@ -334,28 +246,11 @@ class Menu extends CI_Controller{
             $data['menuHalaman'] = $this->ModelHalamanMenu->byUrl($current_url)->row();
             $data['menuPriviliges'] = $this->ModelHalamanMenu->byPeta($row['pengguna_grup'], 'ya');
             $dataButtonHalaman = $this->ModelHalamanMenu->byPeta($row['pengguna_grup'],'tidak');
-            $arrayData = array();
-            $object = (object) array();
-            $objectOut = (object) array();
-            foreach($dataButtonHalaman->result() as $hal){
-                array_push($arrayData, [$hal->halaman_menu => $hal->pengguna_grup]);
-            }
-            foreach($arrayData as $key => $value){
-                foreach($value  as $key2 => $value2){
-                    $object->$key2 = $value2;
-                }
-            }
-            foreach($object as $key => $value){
-                $objectOut->$key = $value;
-            }
-            $data['buttonPriviliges'] = $objectOut;
+            $data['buttonPriviliges'] = button_halaman($dataButtonHalaman);
         }
         
         if($this->form_validation->run() == FALSE){
-            $this->load->view('templates/admin/header', $data);
-            $this->load->view('templates/admin/menu', $data);
-            $this->load->view('pages/admin/'.$page, $data);
-            $this->load->view('templates/admin/footer', $data);
+            template_admin($page, $data);
         }else{
             $update = array();
             $update['judul_menu'] = $this->input->post('judul_menu');

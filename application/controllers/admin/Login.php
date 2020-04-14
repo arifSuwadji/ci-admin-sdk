@@ -41,7 +41,7 @@ class Login extends CI_controller {
                 $dataSession['pengguna_id'] = $row['pengguna_id'];
                 $dataSession['nama_pengguna'] = $row['nama_pengguna'];
                 $dataSession['username'] = $row['username'];
-                $this->session->set_userdata('adminManajemen', $dataSession);
+                $this->session->set_userdata('adminDistribusi', $dataSession);
                 $this->db->where('pengguna', $row['pengguna_id']);
                 redirect(base_url().'admin');
             }else{

@@ -5,6 +5,8 @@ class User extends CI_Controller{
     public function __construct(){
         parent::__construct();
 
+        is_login();
+
         $this->load->model('admin/ModelPengguna');
         $this->load->model('admin/ModelHalamanMenu');
     }
@@ -14,8 +16,8 @@ class User extends CI_Controller{
             show_404();
         }
 
-        if(isset($this->session->userdata['adminManajemen'])){
-            $dataAdmin = $this->ModelPengguna->idAdmin($this->session->userdata['adminManajemen']['pengguna_id']);
+        $dataAdmin = data_admin($this->ModelPengguna);
+        if($dataAdmin){
             $row = $dataAdmin->row_array();
             $data = array();
             $data['title'] = ucfirst('Data Admin');
@@ -40,32 +42,10 @@ class User extends CI_Controller{
                 $data['menuHalaman'] = $this->ModelHalamanMenu->byUrl($current_url)->row();
                 $data['menuPriviliges'] = $this->ModelHalamanMenu->byPeta($row['pengguna_grup'], 'ya');
                 $dataHalaman = $this->ModelHalamanMenu->byPeta($row['pengguna_grup'], 'tidak');
-                $arrayData = array();
-                $object = (object) array();
-                $objectOut = (object) array();
-                foreach($dataHalaman->result() as $hal){
-                    array_push($arrayData, [$hal->halaman_menu => $hal->pengguna_grup]);
-                }
-                foreach($arrayData as $key => $value){
-                    foreach($value  as $key2 => $value2){
-                        $object->$key2 = $value2;
-                    }
-                }
-                foreach($object as $key => $value){
-                    $objectOut->$key = $value;
-                }
-                $data['priviliges'] = $objectOut;
+                $data['priviliges'] = button_halaman($dataHalaman);
             }
-            $this->load->view('templates/admin/header', $data);
-            $this->load->view('templates/admin/menu', $data);
-            $this->load->view('pages/admin/'.$page, $data);
-            $this->load->view('templates/admin/footer', $data);
-        }else{
-            $data = array();
-            $data['nama_pengguna'] = $_GET ? $this->input->get('nama_pengguna') : '';
-            $data['password'] = $_GET ? $this->input->get('password') : '';
-            $data['errmsg'] = $_GET ? $this->input->get('errmsg') : '';
-            $this->load->view('pages/admin/login', $data);
+    
+            template_admin($page, $data);
         }
     }
 
@@ -79,7 +59,7 @@ class User extends CI_Controller{
         $recodsTotal = $this->ModelPengguna->countAdmin($value);
         $listAdmin = $this->ModelPengguna->listAdmin($value, $start, $length, $column, $sort);
         $results = array();
-        $dataAdmin = $this->ModelPengguna->idAdmin($this->session->userdata['adminManajemen']['pengguna_id']);
+        $dataAdmin = data_admin($this->ModelPengguna);
         $idHalamanEdit = 10;
         $row = $dataAdmin->row_array();
         $idHalamanHapus = 12;
@@ -120,68 +100,42 @@ class User extends CI_Controller{
             show_404();
         }
 
-        if(isset($this->session->userdata['adminManajemen'])){
-            $dataAdmin = $this->ModelPengguna->idAdmin($this->session->userdata['adminManajemen']['pengguna_id']);
-            $row = $dataAdmin->row_array();
-            $data = array();
-            $data['filejs'] = '';
-            $data['nama_tambah_pengguna'] = '';
-            $data['nama_tambah_user'] = '';
-            $data['select_pengguna_grup'] = '';
-            $data['password'] = '';
-            $data['konf_password'] = '';
-            $current_url = $this->uri->segment(1);
-            if($this->uri->segment(2)){
-                $current_url .= '/'.$this->uri->segment(2);
-            }
-            $data['current_url'] = $current_url;
-            $data['fixed'] = 'fixed';
-            if($row){
-                $dataGrup = $this->ModelPengguna->idGrup($row['pengguna_grup'])->row_array();
-                $data['nama_pengguna'] = $row['nama_pengguna'];
-                $data['nama_grup'] = $dataGrup['nama_grup'];
-                $data['pengguna_grup'] = $row['pengguna_grup'];
-                $data['errmsg'] = $_GET ? $this->input->get('errmsg') : '';
-                $data['menuHalaman'] = $this->ModelHalamanMenu->byUrl($current_url)->row();
-                $data['menuPriviliges'] = $this->ModelHalamanMenu->byPeta($row['pengguna_grup'], 'ya');
-                $dataHalaman = $this->ModelHalamanMenu->byPeta($row['pengguna_grup'], 'tidak');
-                $arrayData = array();
-                $object = (object) array();
-                $objectOut = (object) array();
-                foreach($dataHalaman->result() as $hal){
-                    array_push($arrayData, [$hal->halaman_menu => $hal->pengguna_grup]);
-                }
-                foreach($arrayData as $key => $value){
-                    foreach($value  as $key2 => $value2){
-                        $object->$key2 = $value2;
-                    }
-                }
-                foreach($object as $key => $value){
-                    $objectOut->$key = $value;
-                }
-                $data['priviliges'] = $objectOut;
-            }
-            $dataGrup = $this->ModelPengguna->dataGrup();
-            $data['data_grup'] = $dataGrup;
-            $this->load->view('templates/admin/header', $data);
-            $this->load->view('templates/admin/menu', $data);
-            $this->load->view('pages/admin/'.$page, $data);
-            $this->load->view('templates/admin/footer', $data);
-        }else{
-            $data = array();
-            $data['nama_pengguna'] = $_GET ? $this->input->get('nama_pengguna') : '';
-            $data['password'] = $_GET ? $this->input->get('password') : '';
-            $data['errmsg'] = $_GET ? $this->input->get('errmsg') : '';
-            $this->load->view('pages/admin/login', $data);
+        $dataAdmin = data_admin($this->ModelPengguna);
+        $row = $dataAdmin->row_array();
+        $data = array();
+        $data['filejs'] = '';
+        $data['nama_tambah_pengguna'] = '';
+        $data['nama_tambah_user'] = '';
+        $data['select_pengguna_grup'] = '';
+        $data['password'] = '';
+        $data['konf_password'] = '';
+        $current_url = $this->uri->segment(1);
+        if($this->uri->segment(2)){
+            $current_url .= '/'.$this->uri->segment(2);
         }
+        $data['current_url'] = $current_url;
+        $data['fixed'] = 'fixed';
+        if($row){
+            $dataGrup = $this->ModelPengguna->idGrup($row['pengguna_grup'])->row_array();
+            $data['nama_pengguna'] = $row['nama_pengguna'];
+            $data['nama_grup'] = $dataGrup['nama_grup'];
+            $data['pengguna_grup'] = $row['pengguna_grup'];
+            $data['errmsg'] = $_GET ? $this->input->get('errmsg') : '';
+            $data['menuHalaman'] = $this->ModelHalamanMenu->byUrl($current_url)->row();
+            $data['menuPriviliges'] = $this->ModelHalamanMenu->byPeta($row['pengguna_grup'], 'ya');
+            $dataHalaman = $this->ModelHalamanMenu->byPeta($row['pengguna_grup'], 'tidak');
+            $data['priviliges'] = button_halaman($dataHalaman);
+        }
+        $dataGrup = $this->ModelPengguna->dataGrup();
+        $data['data_grup'] = $dataGrup;
+
+        template_admin($page, $data);
     }
 
-    public function tambahBaru(){
-        $this->form_validation->set_rules('nama_pengguna', 'Nama Pengguna', 'required', array('required' => '%s belum diisi'));
-        $this->form_validation->set_rules('user_pengguna', 'User Pengguna', 'required', array('required' => '%s belum diisi'));
-        $this->form_validation->set_rules('pengguna_grup', 'Pengguna Grup', 'required', array('required' => '%s belum dipilih'));
-        $this->form_validation->set_rules('password', 'Password', 'required', array('required' => '%s belum diisi'));
-        $this->form_validation->set_rules('konf_password', 'Konfirmasi Password', 'required', array('required' => '%s belum diisi'));
+    public function tambahBaru($page = 'user/tambah_user'){
+        $dataValidation = array('nama_pengguna' => 'belum diisi', 'user_pengguna' => 'belum diisi', 'pengguna_grup' => 'belum dipilih', 'password' => 'belum diisi', 'konf_password' => 'belum diisi');
+        is_validation($dataValidation);
+
         $data = array();
         $data['nama_tambah_pengguna'] = $this->input->post('nama_pengguna');
         $data['nama_tambah_user'] = $this->input->post('user_pengguna');
@@ -190,7 +144,7 @@ class User extends CI_Controller{
         $data['konf_password'] = $this->input->post('konf_password');
         $data['errmsg'] = '';
         $data['filejs'] = '';
-        $dataAdmin = $this->ModelPengguna->idAdmin($this->session->userdata['adminManajemen']['pengguna_id']);
+        $dataAdmin = data_admin($this->ModelPengguna);
         $row = $dataAdmin->row_array();
         $current_url = $this->uri->segment(1);
         if($this->uri->segment(2)){
@@ -207,29 +161,12 @@ class User extends CI_Controller{
             $data['menuHalaman'] = $this->ModelHalamanMenu->byUrl($current_url)->row();
             $data['menuPriviliges'] = $this->ModelHalamanMenu->byPeta($row['pengguna_grup'], 'ya');
             $dataHalaman = $this->ModelHalamanMenu->byPeta($row['pengguna_grup'], 'tidak');
-            $arrayData = array();
-            $object = (object) array();
-            $objectOut = (object) array();
-            foreach($dataHalaman->result() as $hal){
-                array_push($arrayData, [$hal->halaman_menu => $hal->pengguna_grup]);
-            }
-            foreach($arrayData as $key => $value){
-                foreach($value  as $key2 => $value2){
-                    $object->$key2 = $value2;
-                }
-            }
-            foreach($object as $key => $value){
-                $objectOut->$key = $value;
-            }
-            $data['priviliges'] = $objectOut;
+            $data['priviliges'] = button_halaman($dataHalaman);
         }
         $dataGrup = $this->ModelPengguna->dataGrup();
         $data['data_grup'] = $dataGrup;
         if($this->form_validation->run() == FALSE){
-            $this->load->view('templates/admin/header', $data);
-            $this->load->view('templates/admin/menu', $data);
-            $this->load->view('pages/admin/user/tambah_user', $data);
-            $this->load->view('templates/admin/footer', $data);
+            template_admin($page, $data);
         }else{
             if($this->input->post('password') != $this->input->post('konf_password')){
                 redirect(base_url().'admin/tambahPengguna?errmsg=password dan konfirmasi password tidak sama');
@@ -256,8 +193,8 @@ class User extends CI_Controller{
             show_404();
         }
 
-        if(isset($this->session->userdata['adminManajemen'])){
-            $dataAdmin = $this->ModelPengguna->idAdmin($this->session->userdata['adminManajemen']['pengguna_id']);
+        $dataAdmin = data_admin($this->ModelPengguna);
+        if($dataAdmin){
             $row = $dataAdmin->row_array();
             $data = array();
             $data['filejs'] = '';
@@ -278,21 +215,7 @@ class User extends CI_Controller{
                 $data['menuHalaman'] = $this->ModelHalamanMenu->byUrl($current_url)->row();
                 $data['menuPriviliges'] = $this->ModelHalamanMenu->byPeta($row['pengguna_grup'], 'ya');
                 $dataHalaman = $this->ModelHalamanMenu->byPeta($row['pengguna_grup'], 'tidak');
-                $arrayData = array();
-                $object = (object) array();
-                $objectOut = (object) array();
-                foreach($dataHalaman->result() as $hal){
-                    array_push($arrayData, [$hal->halaman_menu => $hal->pengguna_grup]);
-                }
-                foreach($arrayData as $key => $value){
-                    foreach($value  as $key2 => $value2){
-                        $object->$key2 = $value2;
-                    }
-                }
-                foreach($object as $key => $value){
-                    $objectOut->$key = $value;
-                }
-                $data['priviliges'] = $objectOut;
+                $data['priviliges'] = button_halaman($dataHalaman);
                 $dataEdit = $this->ModelPengguna->idAdmin($this->uri->segment(3));
                 $rowEdit = $dataEdit->row_array();
                 if($rowEdit){
@@ -304,30 +227,22 @@ class User extends CI_Controller{
             }
             $dataGrup = $this->ModelPengguna->dataGrup();
             $data['data_grup'] = $dataGrup;
-            $this->load->view('templates/admin/header', $data);
-            $this->load->view('templates/admin/menu', $data);
-            $this->load->view('pages/admin/'.$page, $data);
-            $this->load->view('templates/admin/footer', $data);
-        }else{
-            $data = array();
-            $data['nama_penguna'] = $_GET ? $this->input->get('nama_penguna') : '';
-            $data['password'] = $_GET ? $this->input->get('password') : '';
-            $data['errmsg'] = $_GET ? $this->input->get('errmsg') : '';
-            $this->load->view('pages/admin/login', $data);
+    
+            template_admin($page, $data);
         }
     }
 
     public function update($page = 'user/edit_user'){
-        $this->form_validation->set_rules('nama_pengguna', 'Nama Pengguna', 'required', array('required' => '%s belum diisi'));
-        $this->form_validation->set_rules('user_pengguna', 'User Pengguna', 'required', array('required' => '%s belum diisi'));
-        $this->form_validation->set_rules('pengguna_grup', 'Pengguna Grup', 'required', array('required' => '%s belum dipilih'));
+        $dataValidation = array('nama_pengguna' => 'belum diisi', 'user_pengguna' => 'belum diisi', 'pengguna_grup' => 'belum dipilih');
+        is_validation($dataValidation);
+        
         $data = array();
         $data['nama_edit_pengguna'] = $this->input->post('nama_pengguna');
         $data['nama_edit_user'] = $this->input->post('user_pengguna');
         $data['select_pengguna_grup'] = $this->input->post('pengguna_grup');
         $data['errmsg'] = '';
         $data['filejs'] = '';
-        $dataAdmin = $this->ModelPengguna->idAdmin($this->session->userdata['adminManajemen']['pengguna_id']);
+        $dataAdmin = data_admin($this->ModelPengguna);
         $row = $dataAdmin->row_array();
         $current_url = $this->uri->segment(1);
         if($this->uri->segment(2)){
@@ -344,21 +259,7 @@ class User extends CI_Controller{
             $data['menuHalaman'] = $this->ModelHalamanMenu->byUrl($current_url)->row();
             $data['menuPriviliges'] = $this->ModelHalamanMenu->byPeta($row['pengguna_grup'], 'ya');
             $dataHalaman = $this->ModelHalamanMenu->byPeta($row['pengguna_grup'], 'tidak');
-            $arrayData = array();
-            $object = (object) array();
-            $objectOut = (object) array();
-            foreach($dataHalaman->result() as $hal){
-                array_push($arrayData, [$hal->halaman_menu => $hal->pengguna_grup]);
-            }
-            foreach($arrayData as $key => $value){
-                foreach($value  as $key2 => $value2){
-                    $object->$key2 = $value2;
-                }
-            }
-            foreach($object as $key => $value){
-                $objectOut->$key = $value;
-            }
-            $data['priviliges'] = $objectOut;
+            $data['priviliges'] = button_halaman($dataHalaman);
             $dataEdit = $this->ModelPengguna->idAdmin($this->input->post('pengguna_id_edit'));
             $rowEdit = $dataEdit->row_array();
             if($rowEdit){
@@ -370,10 +271,7 @@ class User extends CI_Controller{
         $dataGrup = $this->ModelPengguna->dataGrup();
         $data['data_grup'] = $dataGrup;
         if($this->form_validation->run() == FALSE){
-            $this->load->view('templates/admin/header', $data);
-            $this->load->view('templates/admin/menu', $data);
-            $this->load->view('pages/admin/'.$page, $data);
-            $this->load->view('templates/admin/footer', $data);
+            template_admin($page, $data);
         }else{
             $update = array();
             $update['nama_pengguna'] = $this->input->post('nama_pengguna');
@@ -411,8 +309,8 @@ class User extends CI_Controller{
             show_404();
         }
 
-        if(isset($this->session->userdata['adminManajemen'])){
-            $dataAdmin = $this->ModelPengguna->idAdmin($this->session->userdata['adminManajemen']['pengguna_id']);
+        $dataAdmin = data_admin($this->ModelPengguna);
+        if($dataAdmin){
             $row = $dataAdmin->row_array();
             $data = array();
             $data['title'] = ucfirst('Data Admin Grup');
@@ -437,32 +335,9 @@ class User extends CI_Controller{
                 $data['menuHalaman'] = $this->ModelHalamanMenu->byUrl($current_url)->row();
                 $data['menuPriviliges'] = $this->ModelHalamanMenu->byPeta($row['pengguna_grup'], 'ya');
                 $dataHalaman = $this->ModelHalamanMenu->byPeta($row['pengguna_grup'], 'tidak');
-                $arrayData = array();
-                $object = (object) array();
-                $objectOut = (object) array();
-                foreach($dataHalaman->result() as $hal){
-                    array_push($arrayData, [$hal->halaman_menu => $hal->pengguna_grup]);
-                }
-                foreach($arrayData as $key => $value){
-                    foreach($value  as $key2 => $value2){
-                        $object->$key2 = $value2;
-                    }
-                }
-                foreach($object as $key => $value){
-                    $objectOut->$key = $value;
-                }
-                $data['priviliges'] = $objectOut;
+                $data['priviliges'] = button_halaman($dataHalaman);
             }
-            $this->load->view('templates/admin/header', $data);
-            $this->load->view('templates/admin/menu', $data);
-            $this->load->view('pages/admin/'.$page, $data);
-            $this->load->view('templates/admin/footer', $data);
-        }else{
-            $data = array();
-            $data['nama_pengguna'] = $_GET ? $this->input->get('nama_pengguna') : '';
-            $data['password'] = $_GET ? $this->input->get('password') : '';
-            $data['errmsg'] = $_GET ? $this->input->get('errmsg') : '';
-            $this->load->view('pages/admin/login', $data);
+            template_admin($page, $data);
         }
     }
 
@@ -476,7 +351,7 @@ class User extends CI_Controller{
         $recodsTotal = $this->ModelPengguna->countAdminGrup($value);
         $listGrup = $this->ModelPengguna->listAdminGrup($value, $start, $length, $column, $sort);
         $results = array();
-        $dataAdmin = $this->ModelPengguna->idAdmin($this->session->userdata['adminManajemen']['pengguna_id']);
+        $dataAdmin = data_admin($this->ModelPengguna);
         $row = $dataAdmin->row_array();
         $idHalamanEdit = 16;
         $idHalamanHapus = 18;
@@ -518,8 +393,8 @@ class User extends CI_Controller{
             show_404();
         }
 
-        if(isset($this->session->userdata['adminManajemen'])){
-            $dataAdmin = $this->ModelPengguna->idAdmin($this->session->userdata['adminManajemen']['pengguna_id']);
+        $dataAdmin = data_admin($this->ModelPengguna);
+        if($dataAdmin){
             $row = $dataAdmin->row_array();
             $data = array();
             $data['filejs'] = '';
@@ -539,45 +414,25 @@ class User extends CI_Controller{
                 $data['menuHalaman'] = $this->ModelHalamanMenu->byUrl($current_url)->row();
                 $data['menuPriviliges'] = $this->ModelHalamanMenu->byPeta($row['pengguna_grup'], 'ya');
                 $dataHalaman = $this->ModelHalamanMenu->byPeta($row['pengguna_grup'], 'tidak');
-                $arrayData = array();
-                $object = (object) array();
-                $objectOut = (object) array();
-                foreach($dataHalaman->result() as $hal){
-                    array_push($arrayData, [$hal->halaman_menu => $hal->pengguna_grup]);
-                }
-                foreach($arrayData as $key => $value){
-                    foreach($value  as $key2 => $value2){
-                        $object->$key2 = $value2;
-                    }
-                }
-                foreach($object as $key => $value){
-                    $objectOut->$key = $value;
-                }
-                $data['priviliges'] = $objectOut;
+                $data['priviliges'] = button_halaman($dataHalaman);
             }
             $dataGrup = $this->ModelPengguna->dataGrup();
             $data['data_grup'] = $dataGrup;
-            $this->load->view('templates/admin/header', $data);
-            $this->load->view('templates/admin/menu', $data);
-            $this->load->view('pages/admin/'.$page, $data);
-            $this->load->view('templates/admin/footer', $data);
-        }else{
-            $data = array();
-            $data['nama_pengguna'] = $_GET ? $this->input->get('nama_pengguna') : '';
-            $data['password'] = $_GET ? $this->input->get('password') : '';
-            $data['errmsg'] = $_GET ? $this->input->get('errmsg') : '';
-            $this->load->view('pages/admin/login', $data);
+
+            template_admin($page, $data);
         }
     }
 
     public function tambahGrupBaru($page = 'user/tambah_grup'){
-        $this->form_validation->set_rules('nama_grup', 'Nama Grup', 'required', array('required' => '%s belum diisi'));
+        $dataValidation = array('nama_grup' => 'belum diisi');
+        is_validation($dataValidation);
+
         $data = array();
         $data['nama_tambah_grup'] = $this->input->post('nama_grup');
         $data['errmsg'] = '';
         $data['title'] = ucfirst('Tambah Admin Grup');
         $data['filejs'] = '';
-        $dataAdmin = $this->ModelPengguna->idAdmin($this->session->userdata['adminManajemen']['pengguna_id']);
+        $dataAdmin = data_admin($this->ModelPengguna);
         $row = $dataAdmin->row_array();
         $current_url = $this->uri->segment(1);
         if($this->uri->segment(2)){
@@ -594,29 +449,12 @@ class User extends CI_Controller{
             $data['menuHalaman'] = $this->ModelHalamanMenu->byUrl($current_url)->row();
             $data['menuPriviliges'] = $this->ModelHalamanMenu->byPeta($row['pengguna_grup'], 'ya');
             $dataHalaman = $this->ModelHalamanMenu->byPeta($row['pengguna_grup'], 'tidak');
-            $arrayData = array();
-            $object = (object) array();
-            $objectOut = (object) array();
-            foreach($dataHalaman->result() as $hal){
-                array_push($arrayData, [$hal->halaman_menu => $hal->pengguna_grup]);
-            }
-            foreach($arrayData as $key => $value){
-                foreach($value  as $key2 => $value2){
-                    $object->$key2 = $value2;
-                }
-            }
-            foreach($object as $key => $value){
-                $objectOut->$key = $value;
-            }
-            $data['priviliges'] = $objectOut;
+            $data['priviliges'] = button_halaman($dataHalaman);
         }
         $dataGrup = $this->ModelPengguna->dataGrup();
         $data['data_grup'] = $dataGrup;
         if($this->form_validation->run() == FALSE){
-            $this->load->view('templates/admin/header', $data);
-            $this->load->view('templates/admin/menu', $data);
-            $this->load->view('pages/admin/'.$page, $data);
-            $this->load->view('templates/admin/footer', $data);
+            template_admin($page, $data);
         }else{
             $insert = array();
             $insert['nama_grup'] = $this->input->post('nama_grup');
@@ -636,8 +474,8 @@ class User extends CI_Controller{
             show_404();
         }
 
-        if(isset($this->session->userdata['adminManajemen'])){
-            $dataAdmin = $this->ModelPengguna->idAdmin($this->session->userdata['adminManajemen']['pengguna_id']);
+        $dataAdmin = data_admin($this->ModelPengguna);
+        if($dataAdmin){
             $row = $dataAdmin->row_array();
             $data = array();
             $data['filejs'] = '';
@@ -657,21 +495,7 @@ class User extends CI_Controller{
                 $data['menuHalaman'] = $this->ModelHalamanMenu->byUrl($current_url)->row();
                 $data['menuPriviliges'] = $this->ModelHalamanMenu->byPeta($row['pengguna_grup'], 'ya');
                 $dataHalaman = $this->ModelHalamanMenu->byPeta($row['pengguna_grup'], 'tidak');
-                $arrayData = array();
-                $object = (object) array();
-                $objectOut = (object) array();
-                foreach($dataHalaman->result() as $hal){
-                    array_push($arrayData, [$hal->halaman_menu => $hal->pengguna_grup]);
-                }
-                foreach($arrayData as $key => $value){
-                    foreach($value  as $key2 => $value2){
-                        $object->$key2 = $value2;
-                    }
-                }
-                foreach($object as $key => $value){
-                    $objectOut->$key = $value;
-                }
-                $data['priviliges'] = $objectOut;
+                $data['priviliges'] = button_halaman($dataHalaman);
                 $dataEdit = $this->ModelPengguna->idGrup($this->uri->segment(3));
                 $rowEdit = $dataEdit->row_array();
                 if($rowEdit){
@@ -681,21 +505,15 @@ class User extends CI_Controller{
             }
             $dataGrup = $this->ModelPengguna->dataGrup();
             $data['data_grup'] = $dataGrup;
-            $this->load->view('templates/admin/header', $data);
-            $this->load->view('templates/admin/menu', $data);
-            $this->load->view('pages/admin/'.$page, $data);
-            $this->load->view('templates/admin/footer', $data);
-        }else{
-            $data = array();
-            $data['nama_pengguna'] = $_GET ? $this->input->get('nama_pengguna') : '';
-            $data['password'] = $_GET ? $this->input->get('password') : '';
-            $data['errmsg'] = $_GET ? $this->input->get('errmsg') : '';
-            $this->load->view('pages/admin/login', $data);
+
+            template_admin($page, $data);
         }
     }
 
     public function updateGrup($page = 'user/edit_grup'){
-        $this->form_validation->set_rules('nama_grup', 'Nama Grup', 'required', array('required' => '%s belum diisi'));
+        $dataValidation = array('nama_grup' => 'belum diisi');
+        is_validation($dataValidation);
+
         $data = array();
         $data['nama_edit_grup'] = $this->input->post('nama_grup');
         $data['errmsg'] = '';
@@ -706,7 +524,7 @@ class User extends CI_Controller{
         }
         $data['current_url'] = $current_url;
         $data['fixed'] = 'fixed';
-        $dataAdmin = $this->ModelPengguna->idAdmin($this->session->userdata['adminManajemen']['pengguna_id']);
+        $dataAdmin = data_admin($this->ModelPengguna);
         $row = $dataAdmin->row_array();
         if($row){
             $dataGrup = $this->ModelPengguna->idGrup($row['pengguna_grup'])->row_array();
@@ -717,21 +535,7 @@ class User extends CI_Controller{
             $data['menuHalaman'] = $this->ModelHalamanMenu->byUrl($current_url)->row();
             $data['menuPriviliges'] = $this->ModelHalamanMenu->byPeta($row['pengguna_grup'], 'ya');
             $dataHalaman = $this->ModelHalamanMenu->byPeta($row['pengguna_grup'], 'tidak');
-            $arrayData = array();
-            $object = (object) array();
-            $objectOut = (object) array();
-            foreach($dataHalaman->result() as $hal){
-                array_push($arrayData, [$hal->halaman_menu => $hal->pengguna_grup]);
-            }
-            foreach($arrayData as $key => $value){
-                foreach($value  as $key2 => $value2){
-                    $object->$key2 = $value2;
-                }
-            }
-            foreach($object as $key => $value){
-                $objectOut->$key = $value;
-            }
-            $data['priviliges'] = $objectOut;
+            $data['priviliges'] = button_halaman($dataHalaman);
             $dataEdit = $this->ModelPengguna->idGrup($this->input->post('grup_id_edit'));
             $rowEdit = $dataEdit->row_array();
             if($rowEdit){
@@ -742,11 +546,8 @@ class User extends CI_Controller{
         $dataGrup = $this->ModelPengguna->dataGrup();
         $data['data_grup'] = $dataGrup;
         if($this->form_validation->run() == FALSE){
-            $this->load->view('templates/admin/header', $data);
-            $this->load->view('templates/admin/menu', $data);
-            $this->load->view('pages/admin/'.$page, $data);
+            template_admin($page, $data);
         }else{
-            $this->load->view('templates/admin/footer', $data);
             $update = array();
             $update['nama_grup'] = $this->input->post('nama_grup');
             $this->db->where('grup_id', $this->input->post('grup_id_edit'));
@@ -781,8 +582,8 @@ class User extends CI_Controller{
             show_404();
         }
 
-        if(isset($this->session->userdata['adminManajemen'])){
-            $dataAdmin = $this->ModelPengguna->idAdmin($this->session->userdata['adminManajemen']['pengguna_id']);
+        $dataAdmin = data_admin($this->ModelPengguna);
+        if($dataAdmin){
             $row = $dataAdmin->row_array();
             $data = array();
             $data['title'] = ucfirst('Hak Akses');
@@ -803,21 +604,7 @@ class User extends CI_Controller{
                 $data['menuHalaman'] = $this->ModelHalamanMenu->byUrl($current_url)->row();
                 $data['menuPriviliges'] = $this->ModelHalamanMenu->byPeta($row['pengguna_grup'], 'ya');
                 $dataHalaman = $this->ModelHalamanMenu->byPeta($row['pengguna_grup'], 'tidak');
-                $arrayData = array();
-                $object = (object) array();
-                $objectOut = (object) array();
-                foreach($dataHalaman->result() as $hal){
-                    array_push($arrayData, [$hal->halaman_menu => $hal->pengguna_grup]);
-                }
-                foreach($arrayData as $key => $value){
-                    foreach($value  as $key2 => $value2){
-                        $object->$key2 = $value2;
-                    }
-                }
-                foreach($object as $key => $value){
-                    $objectOut->$key = $value;
-                }
-                $data['priviliges'] = $objectOut;
+                $data['priviliges'] = button_halaman($dataHalaman);
                 $dataEdit = $this->ModelPengguna->idGrup($this->uri->segment(3));
                 $rowEdit = $dataEdit->row_array();
                 if($rowEdit){
@@ -829,16 +616,8 @@ class User extends CI_Controller{
             }
             $dataGrup = $this->ModelPengguna->dataGrup();
             $data['data_grup'] = $dataGrup;
-            $this->load->view('templates/admin/header', $data);
-            $this->load->view('templates/admin/menu', $data);
-            $this->load->view('pages/admin/'.$page, $data);
-            $this->load->view('templates/admin/footer', $data);
-        }else{
-            $data = array();
-            $data['nama_pengguna'] = $_GET ? $this->input->get('nama_pengguna') : '';
-            $data['password'] = $_GET ? $this->input->get('password') : '';
-            $data['errmsg'] = $_GET ? $this->input->get('errmsg') : '';
-            $this->load->view('pages/admin/login', $data);
+
+            template_admin($page, $data);
         }
     }
 
@@ -848,7 +627,7 @@ class User extends CI_Controller{
         $data['errmsg'] = '';
         $data['title'] = ucfirst('Hak Akses');
         $data['filejs'] = '';
-        $dataAdmin = $this->ModelPengguna->idAdmin($this->session->userdata['adminManajemen']['pengguna_id']);
+        $dataAdmin = data_admin($this->ModelPengguna);
         $row = $dataAdmin->row_array();
         $current_url = $this->uri->segment(1);
         if($this->uri->segment(2)){
@@ -865,21 +644,7 @@ class User extends CI_Controller{
             $data['menuHalaman'] = $this->ModelHalamanMenu->byUrl($current_url)->row();
             $data['menuPriviliges'] = $this->ModelHalamanMenu->byPeta($row['pengguna_grup'], 'ya');
             $dataHalaman = $this->ModelHalamanMenu->byPeta($row['pengguna_grup'], 'tidak');
-            $arrayData = array();
-            $object = (object) array();
-            $objectOut = (object) array();
-            foreach($dataHalaman->result() as $hal){
-                array_push($arrayData, [$hal->halaman_menu => $hal->pengguna_grup]);
-            }
-            foreach($arrayData as $key => $value){
-                foreach($value  as $key2 => $value2){
-                    $object->$key2 = $value2;
-                }
-            }
-            foreach($object as $key => $value){
-                $objectOut->$key = $value;
-            }
-            $data['priviliges'] = $objectOut;
+            $data['priviliges'] = button_halaman($dataHalaman);
             $dataEdit = $this->ModelPengguna->idGrup($this->input->post('grup_id_edit'));
             $rowEdit = $dataEdit->row_array();
             if($rowEdit){
@@ -918,8 +683,8 @@ class User extends CI_Controller{
             show_404();
         }
 
-        if(isset($this->session->userdata['adminManajemen'])){
-            $dataAdmin = $this->ModelPengguna->idAdmin($this->session->userdata['adminManajemen']['pengguna_id']);
+        $dataAdmin = data_admin($this->ModelPengguna);
+        if($dataAdmin){
             $row = $dataAdmin->row_array();
             $data = array();
             $data['filejs'] = '';
@@ -940,21 +705,7 @@ class User extends CI_Controller{
                 $data['menuHalaman'] = $this->ModelHalamanMenu->byUrl($current_url)->row();
                 $data['menuPriviliges'] = $this->ModelHalamanMenu->byPeta($row['pengguna_grup'], 'ya');
                 $dataHalaman = $this->ModelHalamanMenu->byPeta($row['pengguna_grup'], 'tidak');
-                $arrayData = array();
-                $object = (object) array();
-                $objectOut = (object) array();
-                foreach($dataHalaman->result() as $hal){
-                    array_push($arrayData, [$hal->halaman_menu => $hal->pengguna_grup]);
-                }
-                foreach($arrayData as $key => $value){
-                    foreach($value  as $key2 => $value2){
-                        $object->$key2 = $value2;
-                    }
-                }
-                foreach($object as $key => $value){
-                    $objectOut->$key = $value;
-                }
-                $data['priviliges'] = $objectOut;
+                $data['priviliges'] = button_halaman($dataHalaman);
                 $dataEdit = $this->ModelPengguna->idAdmin($this->uri->segment(3));
                 $rowEdit = $dataEdit->row_array();
                 if($rowEdit){
@@ -964,29 +715,21 @@ class User extends CI_Controller{
             }
             $dataGrup = $this->ModelPengguna->dataGrup();
             $data['data_grup'] = $dataGrup;
-            $this->load->view('templates/admin/header', $data);
-            $this->load->view('templates/admin/menu', $data);
-            $this->load->view('pages/admin/'.$page, $data);
-            $this->load->view('templates/admin/footer', $data);
-        }else{
-            $data = array();
-            $data['nama_pengguna'] = $_GET ? $this->input->get('nama_pengguna') : '';
-            $data['password'] = $_GET ? $this->input->get('password') : '';
-            $data['errmsg'] = $_GET ? $this->input->get('errmsg') : '';
-            $this->load->view('pages/admin/login', $data);
+            template_admin($page, $data);
         }
     }
 
     public function updatePassword($page = 'user/ganti_password'){
-        $this->form_validation->set_rules('password', 'Password', 'required', array('required' => '%s belum diisi'));
-        $this->form_validation->set_rules('konf_password', 'Konfirmasi Password', 'required', array('required' => '%s belum diisi'));
+        $dataValidation = array('password' => 'belum diisi', 'konf_password' => 'belum diisi');
+        is_validation($dataValidation);
+
         $data = array();
         $data['password'] = $this->input->post('password');
         $data['konf_password'] = $this->input->post('konf_password');
         $data['errmsg'] = '';
         $data['title'] = ucfirst('Ganti Password');
         $data['filejs'] = '';
-        $dataAdmin = $this->ModelPengguna->idAdmin($this->session->userdata['adminManajemen']['pengguna_id']);
+        $dataAdmin = data_admin($this->ModelPengguna);
         $row = $dataAdmin->row_array();
         $current_url = $this->uri->segment(1);
         if($this->uri->segment(2)){
@@ -1003,21 +746,7 @@ class User extends CI_Controller{
             $data['menuHalaman'] = $this->ModelHalamanMenu->byUrl($current_url)->row();
             $data['menuPriviliges'] = $this->ModelHalamanMenu->byPeta($row['pengguna_grup'], 'ya');
             $dataHalaman = $this->ModelHalamanMenu->byPeta($row['pengguna_grup'], 'tidak');
-            $arrayData = array();
-            $object = (object) array();
-            $objectOut = (object) array();
-            foreach($dataHalaman->result() as $hal){
-                array_push($arrayData, [$hal->halaman_menu => $hal->pengguna_grup]);
-            }
-            foreach($arrayData as $key => $value){
-                foreach($value  as $key2 => $value2){
-                    $object->$key2 = $value2;
-                }
-            }
-            foreach($object as $key => $value){
-                $objectOut->$key = $value;
-            }
-            $data['priviliges'] = $objectOut;
+            $data['priviliges'] = button_halaman($dataHalaman);
         }
         $dataGrup = $this->ModelPengguna->dataGrup();
         $data['data_grup'] = $dataGrup;
@@ -1028,10 +757,7 @@ class User extends CI_Controller{
                 $data['nama_pengguna_edit'] = $rowEdit['nama_pengguna'];
                 $data['pengguna_id_edit'] = $rowEdit['pengguna_id'];
             }
-            $this->load->view('templates/admin/header', $data);
-            $this->load->view('templates/admin/menu', $data);
-            $this->load->view('pages/admin/'.$page, $data);
-            $this->load->view('templates/admin/footer', $data);
+            template_admin($page, $data);
         }else{
             if($this->input->post('password') != $this->input->post('konf_password')){
                 redirect(base_url().'admin/gantiPassword/'.$this->input->post('pengguna_id_edit').'?errmsg=password dan konfirmasi password tidak sama');

@@ -9,13 +9,7 @@ class Logout extends CI_controller {
     }
 
     public function index(){
-        $this->db->where('pengguna', $this->session->userdata['adminManajemen']['pengguna_id']);
-        $sess_data = array(
-            'pengguna_id' => '',
-            'nama_pengguna' => '',
-        );
-        $this->session->unset_userdata('adminManajemen', $sess_data);
-        redirect(base_url().'admin');
+        is_logout();
     }
 }
 ?>
